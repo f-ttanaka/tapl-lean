@@ -77,3 +77,48 @@ theorem rev_ty_iszero :
 -- 補題8.2.2 逆転補題 END
 
 -- 演習8.2.3 START
+def hasType (t : Term) : Prop := ∃ (T : Ty), WellTyped t T
+
+theorem sub_ty_ite :
+  ∀ {t1 t2 t3 : Term},
+    hasType (ite t1 t2 t3) → hasType t1 ∧ hasType t2 ∧ hasType t3
+  := by
+  intro t1 t2 t3 h; cases h; rename_i T h
+  have h_subs := rev_ty_ite h
+  have h1 := h_subs.left
+  have h2 := h_subs.right.left
+  have h3 := h_subs.right.right
+  -- hasType t1の証明
+  apply And.intro
+  exists TBool
+  -- hasType t2 ∧ hasType t3 の証明
+  apply And.intro <;> exists T
+
+theorem sub_ty_succ :
+  ∀ {t : Term}, hasType (succ t) → hasType t
+  := by
+  intro t h; cases h; rename_i T h
+  have h_sub := (rev_ty_succ h).right
+  exists TNat
+
+theorem sub_ty_pred :
+  ∀ {t : Term}, hasType (pred t) → hasType t
+  := by
+  intro t h; cases h; rename_i T h
+  have h_sub := (rev_ty_pred h).right
+  exists TNat
+
+theorem sub_ty_iszero :
+  ∀ {t : Term}, hasType (iszero t) → hasType t
+  := by
+  intro t h; cases h; rename_i T h
+  have h_sub := (rev_ty_iszero h).right
+  exists TNat
+-- 演習8.2.3 END
+
+-- 定理8.2.3 型の一意性
+theorem ty_uniqueness :
+  ∀ {t : Term} {T1 T2 : Ty},
+    (⊢ t : T1) ∧ (⊢ t : T2) → T1 = T2
+  := by
+  sorry
