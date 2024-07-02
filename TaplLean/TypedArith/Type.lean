@@ -118,7 +118,23 @@ theorem sub_ty_iszero :
 
 -- 定理8.2.3 型の一意性
 theorem ty_uniqueness :
-  ∀ {t : Term} {T1 T2 : Ty},
-    (⊢ t : T1) ∧ (⊢ t : T2) → T1 = T2
+  ∀ {t : Term} {T T' : Ty},
+    (⊢ t : T) ∧ (⊢ t : T') → T = T'
   := by
+  intro t T T' h
+  have h1 := h.left
+  have h2 := h.right
+  induction t;
+  -- tru
+  . cases h1
+    cases h2
+    rfl
+  -- fls
+  . cases h1
+    cases h2
+    rfl
+  -- ite
+  . rename_i t1 t2 t3 ih1 ih2 ih3
+    cases h1; rename_i ht2 ht3
+    cases h2; rename_i ht2' ht3'
   sorry
