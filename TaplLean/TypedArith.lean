@@ -265,4 +265,12 @@ theorem preserve :
     . rename_i t1' hs_t1
       have hty_t' := ih1 hs_t1
       apply wt_if hty_t' ht2 ht3
+  -- wt_zero
+  . intro t' h; cases h
+  -- wt_succ
+  . rename_i t ht ih; intro t' h; cases h; rename_i t' hs
+    have hty_t' := ih hs
+    apply wt_succ hty_t'
+  -- wt_pred
+  .
   sorry
