@@ -245,3 +245,24 @@ theorem progress :
     . cases ih with
       | intro u hs =>
           exists u.iszero; apply Step.st_iszero hs
+
+-- 8.3.3 保存定理
+theorem preserve :
+  ∀ {t t' : Term} {T : Ty},
+    (t -> t') → (⊢ t : T) → (⊢ t' : T)
+  := by
+  intro t t' T hs ht; revert t'; induction ht
+  -- wt_tru
+  . intro t' hs; cases hs
+  -- wt_fls
+  . intro t' hs; cases hs
+  -- wt_if
+  . rename_i t1 t2 t3 T' ht1 ht2 ht3 ih1 ih2 ih3
+    intro t' hs
+    cases hs
+    . assumption
+    . assumption
+    . rename_i t1' hs_t1
+      have hty_t' := ih1 hs_t1
+      apply wt_if hty_t' ht2 ht3
+  sorry
