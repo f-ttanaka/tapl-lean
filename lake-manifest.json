@@ -1,5 +1,15 @@
-{"version": 7,
+{"version": "1.1.0",
  "packagesDir": ".lake/packages",
- "packages": [],
+ "packages":
+ [{"url": "https://github.com/leanprover-community/batteries",
+   "type": "git",
+   "subDir": null,
+   "scope": "",
+   "rev": "dc4a6b1ac3cd502988e283d5c9c5fdf261125a07",
+   "name": "batteries",
+   "manifestFile": "lake-manifest.json",
+   "inputRev": "main",
+   "inherited": false,
+   "configFile": "lakefile.lean"}],
  "name": "«tapl-lean»",
  "lakeDir": ".lake"}

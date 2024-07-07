@@ -9,26 +9,27 @@ inductive Term where
   deriving DecidableEq
 
 inductive Step : Term → Term → Prop where
-  | st_if_tru : ∀ {t1 t2: Term}, Step (Term.ite tru t1 t2) t1
-  | st_if_fls : ∀ {t1 t2: Term}, Step (Term.ite fls t1 t2) t2
+  | st_if_tru : ∀ {t1 t2: Term}, Step (Term.ite Term.tru t1 t2) t1
+  | st_if_fls : ∀ {t1 t2: Term}, Step (Term.ite Term.fls t1 t2) t2
   | st_if : ∀ {t1 t1' t2 t3: Term},
       Step t1 t1' → Step (Term.ite t1 t2 t3) (Term.ite t1' t2 t3)
   | st_succ : ∀ {t1 t1' : Term},
       Step t1 t1' → Step (Term.succ t1) (Term.succ t1')
-  | st_pred_0 : Step (Term.pred zero) zero
+  | st_pred_0 : Step (Term.pred Term.zero) Term.zero
   | st_pred_succ : ∀ {t : Term},
       Step (Term.pred (Term.succ t)) t
   | st_pred : ∀ {t1 t1' : Term},
       Step t1 t1' → Step (Term.pred t1) (Term.pred t1')
-  | st_iszero_0 : Step (Term.iszero zero) tru
+  | st_iszero_0 : Step (Term.iszero Term.zero) Term.tru
   | st_iszero_succ : ∀ {t : Term},
-      Step (Term.iszero (Term.succ t)) fls
+      Step (Term.iszero (Term.succ t)) Term.fls
   | st_iszero : ∀ {t1 t1' : Term},
       Step t1 t1' → Step (Term.iszero t1) (Term.iszero t1')
 
 infix:100 " -> " => Step
 
-example : Term.iszero (Term.succ (Term.succ zero)) -> fls := by
+example : Term.iszero (Term.succ (Term.succ Term.zero)) -> Term.fls
+  := by
   apply Step.st_iszero_succ
 
 
@@ -246,6 +247,7 @@ theorem progress :
       | intro u hs =>
           exists u.iszero; apply Step.st_iszero hs
 
+open Step
 -- 8.3.3 保存定理
 theorem preserve :
   ∀ {t t' : Term} {T : Ty},
@@ -257,7 +259,7 @@ theorem preserve :
   -- wt_fls
   . intro t' hs; cases hs
   -- wt_if
-  . rename_i t1 t2 t3 T' ht1 ht2 ht3 ih1 ih2 ih3
+  . rename_i t1 t2 t3 T' ht1 ht2 ht3 ih1 _ _
     intro t' hs
     cases hs
     . assumption
@@ -268,9 +270,60 @@ theorem preserve :
   -- wt_zero
   . intro t' h; cases h
   -- wt_succ
-  . rename_i t ht ih; intro t' h; cases h; rename_i t' hs
+  . rename_i t _ht ih; intro t' h; cases h; rename_i t' hs
     have hty_t' := ih hs
     apply wt_succ hty_t'
   -- wt_pred
-  .
-  sorry
+  . rename_i t ht ih; intro t' h_st; cases h_st;
+    . apply wt_zero
+    . cases ht; assumption
+    . rename_i t' h_st
+      have h := ih h_st
+      apply wt_pred h
+  -- iszero
+  . rename_i t ht ih; intro t' h_st
+    cases h_st
+    . apply wt_tru
+    . apply wt_fls
+    . rename_i u h_st
+      have ht_u := ih h_st
+      apply wt_iszero ht_u
+
+-- 演習8.3.4
+theorem preserve' :
+  ∀ {t t' : Term} {T : Ty},
+    (t -> t') → (⊢ t : T) → (⊢ t' : T)
+  := by
+  intro t t' T hs ht; revert T; induction hs <;> intro T ht
+  . cases ht; assumption
+  . cases ht; assumption
+  . rename_i t t' t2 t3 H_st IH
+    cases ht; rename_i HT_t HT_t2 HT_t3
+    have HT_t' := IH HT_t
+    apply wt_if HT_t' HT_t2 HT_t3
+  . rename_i t t' HS IH; cases ht; rename_i HT_t
+    have HT_t' := IH HT_t
+    apply wt_succ HT_t'
+  . cases ht; apply wt_zero
+  . cases ht; rename_i _ HT_succ_t; cases HT_succ_t; assumption
+  . rename_i t t' H_st IH; cases ht; rename_i HT_t
+    have HT_t' := IH HT_t
+    apply wt_pred HT_t'
+  . cases ht; apply wt_tru
+  . cases ht; apply wt_fls
+  . cases ht; rename_i t t' H_st IH HT_t
+    have HT_t' := IH HT_t
+    apply wt_iszero HT_t'
+
+-- 演習8.3.6
+-- 主部展開に関する保存定理は成り立たない
+example : ∃ (t t': Term) (T : Ty), (t -> t') ∧ (⊢ t' : T) ∧ ¬ (⊢ t : T)
+  := by
+  exists (Term.ite Term.tru Term.zero Term.fls)
+  exists Term.zero
+  exists TNat
+  apply And.intro
+  . apply st_if_tru
+  . apply And.intro
+    . apply wt_zero
+    . apply Not.intro; intro HC; cases HC; rename_i _ _ HC; cases HC

@@ -10,3 +10,5 @@ lean_lib «TaplLean» where
 @[default_target]
 lean_exe «tapl-lean» where
   root := `Main
+
+require batteries from git "https://github.com/leanprover-community/batteries" @ "main"
