@@ -3,6 +3,7 @@ import TaplLean.STLC.Env
 inductive Ty : Type where
   | TBool
   | TArrow : Ty → Ty → Ty
+  deriving DecidableEq
 
 infixr:50 " :-> " => Ty.TArrow
 
