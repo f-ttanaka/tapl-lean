@@ -20,10 +20,10 @@ inductive Term : Type where
 notation:90 "λ" x " : " T " , " t => Term.abs x T t
 
 inductive WellTyped : TyEnv → Term → Ty → Prop where
-  | wt_tru : ∀ Γ, WellTyped Γ Term.tru TBool
-  | wt_fls : ∀ Γ, WellTyped Γ Term.fls TBool
+  | wt_tru : ∀ Γ, WellTyped Γ Term.tru Ty.TBool
+  | wt_fls : ∀ Γ, WellTyped Γ Term.fls Ty.TBool
   | wt_ite : ∀ Γ t1 t2 t3 T,
-      WellTyped Γ t1 TBool →
+      WellTyped Γ t1 Ty.TBool →
       WellTyped Γ t2 T →
       WellTyped Γ t3 T →
       WellTyped Γ (Term.ite t1 t2 t3) T
@@ -39,9 +39,9 @@ inductive WellTyped : TyEnv → Term → Ty → Prop where
 notation:100 Γ " ⊢ " t " ∈: " T => WellTyped Γ t T
 
 open WellTyped
-example : empty ⊢ (Term.app (λ x : TBool, Term.var x) Term.tru) ∈: TBool
+example : empty ⊢ (Term.app (λ x : Ty.TBool, Term.var x) Term.tru) ∈: Ty.TBool
   := by
-  apply wt_app empty (λ x : TBool, Term.var x) Term.tru
-  . apply wt_abs empty x (Term.var x) TBool TBool
+  apply wt_app empty (λ x : Ty.TBool, Term.var x) Term.tru
+  . apply wt_abs empty x (Term.var x) Ty.TBool Ty.TBool
     apply wt_var; simp [update]
   . apply wt_tru

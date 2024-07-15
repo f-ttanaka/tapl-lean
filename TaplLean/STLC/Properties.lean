@@ -26,4 +26,18 @@ theorem ty_rev_app :
 theorem ty_rev_tru :
   ∀ Γ T, (Γ ⊢ tru ∈: T) → T = TBool
   := by
-  intro Γ T HT; cases HT;
+  intro Γ T HT; cases HT; rfl
+
+theorem ty_rev_fls :
+  ∀ Γ T, (Γ ⊢ fls ∈: T) → T = TBool
+  := by
+  intro Γ T HT; cases HT; rfl
+
+theorem ty_rev_ite :
+  ∀ Γ t1 t2 t3 T, (Γ ⊢ ite t1 t2 t3 ∈: T) →
+    (Γ ⊢ t1 ∈: TBool) ∧ (Γ ⊢ t2 ∈: T) ∧ (Γ ⊢ t3 ∈: T)
+  := by
+  intro Γ t1 t2 t3 T HT; cases HT; rename_i HT1 HT2 HT3
+  apply And.intro
+  . assumption
+  . apply And.intro <;> assumption
