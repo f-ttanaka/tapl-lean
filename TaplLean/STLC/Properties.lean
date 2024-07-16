@@ -41,3 +41,57 @@ theorem ty_rev_ite :
   apply And.intro
   . assumption
   . apply And.intro <;> assumption
+
+-- 演習9.3.2
+-- x を変数として Γ ⊢ x x ∈: T となる Γ, T があるか
+-- skip
+
+-- 定理9.3.3 型の一意性
+theorem uniqueness :
+  ∀ {Γ t T1 T2},
+  (Γ ⊢ t ∈: T1) → (Γ ⊢ t ∈: T2) → T1 = T2
+  := by
+  intro Γ t T1 T2 HT
+  revert T1 T2 Γ
+  induction t <;> intro Γ T1 T2 HT1 HT2
+  -- tru
+  . cases HT1; cases HT2; rfl
+  . cases HT1; cases HT2; rfl
+  . rename_i t1 t2 t3 _ IH2 _
+    cases HT1; rename_i HT1_1 HT2_1 HT3_1;
+    cases HT2; rename_i HT1_2 HT2_2 HT3_2;
+    apply IH2 HT2_1 HT2_2
+  . rename_i x; cases HT1; cases HT2; rename_i Eq1 Eq2
+    rw [Eq1] at Eq2
+    apply Option.some_inj.mp Eq2
+  . rename_i x T t IH
+    cases HT1; rename_i T1 HT1
+    cases HT2; rename_i T2 HT2
+    have HT_eq := IH HT1 HT2
+    rw [HT_eq]
+  . rename_i t1 t2 IH1 IH2
+    cases HT1; rename_i T1' HT_t2_1 HT_t1_1
+    cases HT2; rename_i T2' HT_t2_2 HT_t1_2
+    have HT_eq1 := IH1 HT_t1_1 HT_t1_2
+    have HT_eq2 := IH2 HT_t2_1 HT_t2_2
+    rw [HT_eq2] at HT_eq1
+    cases HT_eq1; rfl
+
+-- 補題9.3.4 標準形
+-- (1)
+theorem bool_canonical :
+  ∀ {v}, (Γ ⊢ v ∈: TBool) → Value v → v = tru ∨ v = fls
+  := by
+  intro v Ht Hv; cases Hv
+  . apply Or.intro_left; rfl
+  . apply Or.intro_right; rfl
+  . cases Ht
+
+-- (2)
+theorem abs_canonical :
+  ∀ {v T1 T2},
+  (Γ ⊢ v ∈: T1 :-> T2) → Value v → ∃ x t2, v = λx:T1, t2
+  := by
+  intro v T1 T2 HT Hv; cases Hv <;> cases HT
+  -- abs
+  rename_i x t HT; exists x, t

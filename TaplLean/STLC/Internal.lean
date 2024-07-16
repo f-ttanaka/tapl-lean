@@ -45,3 +45,20 @@ example : empty ⊢ (Term.app (λ x : Ty.TBool, Term.var x) Term.tru) ∈: Ty.TB
   . apply wt_abs empty x (Term.var x) Ty.TBool Ty.TBool
     apply wt_var; simp [update]
   . apply wt_tru
+
+open Term
+def subst (x : String) (s : Term) (t : Term) :=
+  match t with
+  | var y       => if x = y then s else t
+  | λ y : T, t' => if x = y then t else λ y : T, subst x s t'
+  | app t1 t2   => app (subst x s t1) (subst x s t2)
+  | tru => tru
+  | fls => fls
+  | Term.ite t1 t2 t3 => ite (subst x s t1) (subst x s t2) (subst x s t3)
+
+notation:20 "[" x " := " s " ; " t => subst x s t
+
+inductive Value : Term → Prop where
+  | v_tru : Value tru
+  | v_fls : Value fls
+  | v_abs : ∀ {x T t}, Value (λx:T, t)
