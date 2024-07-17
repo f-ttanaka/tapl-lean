@@ -95,3 +95,55 @@ theorem abs_canonical :
   intro v T1 T2 HT Hv; cases Hv <;> cases HT
   -- abs
   rename_i x t HT; exists x, t
+
+-- 定理9.3.5 進行定理
+-- 算術式とは違って閉じた (自由変数を持たない) 項でのみ成り立つ
+theorem progress : ∀ {Γ t T},
+  (Γ ⊢ t ∈: T) →
+  Γ = empty →
+  Value t ∨ ∃t', t -> t'
+  := by
+  intro Γ t T HT HE; induction HT
+  -- wt_tru
+  . apply Or.intro_left; apply Value.v_tru
+  -- wt_fls
+  . apply Or.intro_left; apply Value.v_fls
+  -- wt_ite
+  . apply Or.intro_right
+    rename_i Γ' t1 t2 t3 _ HT_t1 _ _ IH1 _ _
+    have IH1 := IH1 HE
+    cases IH1
+    . rename_i Hv
+      have Hv_t1 := bool_canonical HT_t1 Hv
+      cases Hv_t1 <;> rename_i Heq <;> rw [Heq]
+      . exists t2; apply Step.st_if_tru
+      . exists t3; apply Step.st_if_fls
+    . rename_i Hst; cases Hst; rename_i t1' Hst
+      exists ite t1' t2 t3
+      apply Step.st_if Hst
+  -- wt_var
+  . rename_i _ _ _ Contra
+    rw [HE] at Contra
+    unfold empty at Contra
+    cases Contra
+  -- wt_abs
+  . apply Or.intro_left
+    apply Value.v_abs
+  -- wt_app
+  . apply Or.intro_right
+    rename_i Γ t1 t2 T1 T2 HT_t1 _ IH1 IH2
+    have IH1 := IH1 HE
+    cases IH1 <;> rename_i Ht1
+    . have IH2 := IH2 HE
+      cases IH2 <;> rename_i Ht2
+      . have Ht1_abs := abs_canonical HT_t1 Ht1
+        cases Ht1_abs; rename_i y Ht1_abs
+        cases Ht1_abs; rename_i t1' Ht1_abs; rw [Ht1_abs]
+        exists ([y := t2] t1')
+        apply Step.st_app_abs Ht2
+      . cases Ht2; rename_i t2' Hst2
+        exists app t1 t2'
+        apply Step.st_app2 Ht1 Hst2
+    . cases Ht1; rename_i t1' Hst1
+      exists app t1' t2
+      apply Step.st_app1 Hst1

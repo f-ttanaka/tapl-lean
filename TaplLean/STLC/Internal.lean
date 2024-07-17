@@ -56,9 +56,30 @@ def subst (x : String) (s : Term) (t : Term) :=
   | fls => fls
   | Term.ite t1 t2 t3 => ite (subst x s t1) (subst x s t2) (subst x s t3)
 
-notation:20 "[" x " := " s " ; " t => subst x s t
+notation:20 "[" x " := " s " ] " t => subst x s t
 
 inductive Value : Term → Prop where
   | v_tru : Value tru
   | v_fls : Value fls
   | v_abs : ∀ {x T t}, Value (λx:T, t)
+
+inductive Step : Term → Term → Prop where
+  | st_app_abs : ∀ {x T2 t1 v2},
+      Value v2 →
+      Step (app (λx:T2,t1) v2) ([x := v2] t1)
+  | st_app1 : ∀ {t1 t1' t2},
+      Step t1 t1' →
+      Step (app t1 t2) (app t1' t2)
+  | st_app2 : ∀ {v1 t2 t2'},
+      Value v1 →
+      Step t2 t2' →
+      Step (app v1 t2) (app v1 t2')
+  | st_if_tru : ∀ {t1 t2},
+      Step (ite tru t1 t2) t1
+  | st_if_fls : ∀ {t1 t2},
+      Step (ite fls t1 t2) t2
+  | st_if : ∀ {t1 t1' t2 t3},
+      Step t1 t1' →
+      Step (ite t1 t2 t3) (ite t1' t2 t3)
+
+notation:40 t " -> " t' => Step t t'
