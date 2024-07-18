@@ -169,3 +169,4 @@ theorem ty_sorted : ∀ {Γ Δ t T},
     apply Eq.symm
     apply Hs
   . rename_i Γ x t1 T1 T2 HT_t1 IH
+    have HT_t1 := wt_abs HT_t1
