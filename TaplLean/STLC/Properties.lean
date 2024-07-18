@@ -3,6 +3,7 @@ import TaplLean.STLC.Internal
 
 open Term
 open Ty
+open WellTyped
 
 -- 9.3.1 逆転補題
 -- START
@@ -147,3 +148,24 @@ theorem progress : ∀ {Γ t T},
     . cases Ht1; rename_i t1' Hst1
       exists app t1' t2
       apply Step.st_app1 Hst1
+
+-- 補題9.3.6 並べ替え
+theorem ty_sorted : ∀ {Γ Δ t T},
+  (Γ ⊢ t ∈: T) →
+  sorted Γ Δ →
+  (Δ ⊢ t ∈: T)
+  := by
+  intro Γ Δ t T HG Hs; induction HG
+  . apply wt_tru
+  . apply wt_fls
+  . rename_i Γ' t1 t2 t3 T' _ _ _ IH1 IH2 IH3
+    have HDT1 := IH1 Hs
+    have HDT2 := IH2 Hs
+    have HDT3 := IH3 Hs
+    apply wt_ite HDT1 HDT2 HDT3
+  . rename_i Γ x T HGx
+    apply wt_var
+    rw [← HGx]
+    apply Eq.symm
+    apply Hs
+  . rename_i Γ x t1 T1 T2 HT_t1 IH

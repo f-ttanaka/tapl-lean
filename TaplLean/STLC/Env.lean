@@ -9,3 +9,6 @@ def update {α : Type}
 
 notation:100 x " |→ " v " ; " τ => update x v τ
 notation:100 x " |→ " v => update x v empty
+
+def sorted {α : Type} (Γ : Env α) (Γ' : Env α) : Prop :=
+  ∀ {x}, Γ x = Γ' x
