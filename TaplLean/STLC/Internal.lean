@@ -31,7 +31,7 @@ inductive WellTyped : TyEnv → Term → Ty → Prop where
   | wt_abs : ∀ {Γ x t1 T1 T2},
       WellTyped (x |→ T2; Γ) t1 T1 →
       WellTyped Γ (λ x : T2 , t1) (T2 :-> T1)
-  | wt_app : ∀ Γ t1 t2 T1 T2,
+  | wt_app : ∀ {Γ t1 t2 T1 T2},
       WellTyped Γ t1 (T2 :-> T1) →
       WellTyped Γ t2 T2 →
       WellTyped Γ (Term.app t1 t2) T1
@@ -41,7 +41,7 @@ notation:100 Γ " ⊢ " t " ∈: " T => WellTyped Γ t T
 open WellTyped
 example : empty ⊢ (Term.app (λ x : Ty.TBool, Term.var x) Term.tru) ∈: Ty.TBool
   := by
-  apply wt_app empty (λ x : Ty.TBool, Term.var x) Term.tru
+  apply wt_app
   . apply wt_abs
     apply wt_var; simp [update]
   . apply wt_tru

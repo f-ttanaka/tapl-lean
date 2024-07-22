@@ -42,6 +42,7 @@ theorem ty_rev_ite :
   apply And.intro
   . assumption
   . apply And.intro <;> assumption
+-- End 逆転補題
 
 -- 演習9.3.2
 -- x を変数として Γ ⊢ x x ∈: T となる Γ, T があるか
@@ -155,10 +156,12 @@ theorem ty_sorted : ∀ {Γ Δ t T},
   sorted Γ Δ →
   (Δ ⊢ t ∈: T)
   := by
-  intro Γ Δ t T HG Hs; induction HG
+  intro Γ Δ t T HG Hs
+  revert Δ
+  induction HG <;> intro Δ Hs
   . apply wt_tru
   . apply wt_fls
-  . rename_i Γ' t1 t2 t3 T' _ _ _ IH1 IH2 IH3
+  . rename_i Γ t1 t2 t3 T _ _ _ IH1 IH2 IH3
     have HDT1 := IH1 Hs
     have HDT2 := IH2 Hs
     have HDT3 := IH3 Hs
@@ -168,5 +171,85 @@ theorem ty_sorted : ∀ {Γ Δ t T},
     rw [← HGx]
     apply Eq.symm
     apply Hs
-  . rename_i Γ x t1 T1 T2 HT_t1 IH
-    have HT_t1 := wt_abs HT_t1
+  . rename_i Γ x t1 T1 T2 _ IH
+    apply wt_abs
+    have Hs_up := sorted_update x T2 Hs
+    apply IH Hs_up
+  . rename_i Γ t1 t2 T1 T2 _ _ IH1 IH2
+    have Hs1 := IH1 Hs
+    have Hs2 := IH2 Hs
+    apply wt_app Hs1 Hs2
+
+-- 演習9.3.7 弱化
+theorem weakening : ∀ {Γ t T x S},
+  (Γ ⊢ t ∈: T) →
+  Γ x = none →
+  (x |→ S ; Γ) ⊢ t ∈: T
+  := by
+  intro Γ t T x S HTt HGx
+  induction HTt
+  . apply wt_tru
+  . apply wt_fls
+  . rename_i Γ t1 t2 t3 T _ _ _ IH1 IH2 IH3
+    have HT_t1 := IH1 HGx
+    have HT_t2 := IH2 HGx
+    have HT_t3 := IH3 HGx
+    apply wt_ite HT_t1 HT_t2 HT_t3
+  . rename_i Γ y T HGy
+    apply wt_var; unfold update; split
+    . exfalso
+      rename_i Heq
+      rw [Heq] at HGx; rw [HGy] at HGx;
+      have Contra := Option.some_ne_none T
+      rw [← HGx] at Contra
+      apply Contra (Eq.refl (some T))
+    . assumption
+  . rename_i Γ y t1 T1 T2 HTy IH
+    cases String.decEq y x <;> apply wt_abs
+    . rename_i Hneq
+      have HG' : ((y |→ T2 ; Γ) x = none) := by
+        unfold update; simp [Hneq]; assumption
+      have HT1 := IH HG'
+      have Hneq' : x ≠ y := by rw [ne_comm]; assumption
+      have H_sorted := sorted_swap Γ x y S T2 Hneq'
+      apply ty_sorted HT1 H_sorted
+    . rename_i Heq
+      rw [← Heq]
+      have H_sorted := sorted_extend_eq Γ y T2 S
+      apply ty_sorted HTy H_sorted
+  . rename_i Γ t1 t2 T1 T2 _ _ IH1 IH2
+    have HT1 := IH1 HGx
+    have HT2 := IH2 HGx
+    apply wt_app HT1 HT2
+
+-- 補題9.3.8 代入補題
+theorem subst_preservation : ∀ {Γ x S t T},
+  ((x |→ S ; Γ) ⊢ t ∈: T) →
+  (Γ ⊢ s ∈: S) →
+  Γ ⊢ ([x := s] t) ∈: T
+  := by
+  intro Γ x S t T Ht Hs
+  generalize HG' : (x |→ S ; Γ) = Γ'
+  rw [HG'] at Ht; revert Γ
+  induction Ht <;> intro _ Hs HG' <;> unfold subst
+  . apply wt_tru
+  . apply wt_fls
+  . rename_i Γ' t1 t2 t3 T _ _ _ IH1 IH2 IH3 Γ
+    have HT1 := IH1 Hs HG'
+    have HT2 := IH2 Hs HG'
+    have HT3 := IH3 Hs HG'
+    apply wt_ite HT1 HT2 HT3
+  . rename_i Γ' y T Hx Γ
+    cases String.decEq x y <;> rw [← HG'] at Hx <;> unfold update at Hx
+    . rename_i Hneq
+      simp [Hneq];
+      simp [Hneq] at Hx
+      apply wt_var Hx
+    . rename_i Heq
+      simp [Heq]
+      simp [Heq] at Hx
+      rw [Hx] at Hs
+      assumption
+  . rename_i Γ' y t1 T1 T2 HT1 IH Γ
+    cases String.decEq x y
+    . rename_i Hneq; simp [Hneq]; apply wt_abs
