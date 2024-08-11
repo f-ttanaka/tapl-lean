@@ -181,7 +181,7 @@ theorem ty_sorted : ∀ {Γ Δ t T},
     apply wt_app Hs1 Hs2
 
 -- 演習9.3.7 弱化
-theorem weakening : ∀ {Γ t T x S},
+theorem weakening : ∀ {Γ t T x} (S),
   (Γ ⊢ t ∈: T) →
   Γ x = none →
   (x |→ S ; Γ) ⊢ t ∈: T
@@ -222,6 +222,8 @@ theorem weakening : ∀ {Γ t T x S},
     have HT2 := IH2 HGx
     apply wt_app HT1 HT2
 
+open Option.some
+
 -- 補題9.3.8 代入補題
 theorem subst_preservation : ∀ {Γ x S t T},
   ((x |→ S ; Γ) ⊢ t ∈: T) →
@@ -251,5 +253,69 @@ theorem subst_preservation : ∀ {Γ x S t T},
       rw [Hx] at Hs
       assumption
   . rename_i Γ' y t1 T1 T2 HT1 IH Γ
-    cases String.decEq x y
-    . rename_i Hneq; simp [Hneq]; apply wt_abs
+    -- y は慣習 5.3.4 より、x ≠ y ∧ y ∉ FV(s) を仮定してよい
+    have Hneq : x ≠ y := by admit
+    have HG_y : Γ y = none := by admit
+    have Heq_env : (x |→ S ; y |→ T2 ; Γ) = (y |→ T2 ; x |→ S ; Γ) := by
+      funext z
+      have H_sorted := sorted_swap Γ x y S T2 Hneq
+      unfold sorted at H_sorted
+      apply H_sorted z
+    have Hs_y : (y |→ T2; Γ) ⊢ s ∈: S :=
+      weakening T2 Hs HG_y
+    simp [← HG'] at IH
+    have H := IH Hs_y Heq_env
+    simp [Hneq]
+    apply wt_abs
+    assumption
+  . rename_i Γ' t1 t2 T1 T2 HT1 HT2 IH1 IH2 Γ
+    have H1 := IH1 Hs HG'
+    have H2 := IH2 Hs HG'
+    apply wt_app H1 H2
+
+-- 定理 9.3.9 型保存
+theorem preservation : ∀ {Γ t t' T},
+  (Γ ⊢ t ∈: T) →
+  (t -> t') →
+  Γ ⊢ t' ∈: T
+  := by
+  intro Γ t t' T HT_t; revert t'
+  induction HT_t
+  case wt_tru =>
+    intro _ C
+    cases C
+  case wt_fls =>
+    intro _ C
+    cases C
+  case wt_ite =>
+    intro t Hs
+    rename_i Γ t1 t2 t3 T HT1 HT2 HT3 IH1 _ _
+    cases Hs
+    case st_if_tru =>
+      assumption
+    case st_if_fls =>
+      assumption
+    case st_if t1' Hs1 =>
+      have HT1' := IH1 Hs1
+      apply wt_ite HT1' HT2 HT3
+  case wt_var =>
+    intro t' C
+    cases C
+  case wt_abs =>
+    intro t' Hs
+    cases Hs
+  case wt_app =>
+    intro t' Hs
+    rename_i Γ t1 t2 T1 T2 HT1 HT2 IH1 IH2
+    cases Hs
+    case st_app_abs =>
+      cases HT1
+      rename_i H
+      apply subst_preservation H HT2
+    case st_app1 t1' Hs1 =>
+      have HT1' := IH1 Hs1
+      apply wt_app HT1' HT2
+    case st_app2 t2' _ Hs2 =>
+      have HT2' := IH2 Hs2
+      apply wt_app HT1 HT2'
+  done
