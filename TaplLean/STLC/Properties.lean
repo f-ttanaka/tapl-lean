@@ -319,3 +319,19 @@ theorem preservation : ∀ {Γ t t' T},
       have HT2' := IH2 Hs2
       apply wt_app HT1 HT2'
   done
+
+-- 演習 9.3.10
+-- 主部展開に関する保存定理は成り立たない
+example : ∃ (Γ : TyEnv) (t t': Term) (T : Ty),
+  (Γ ⊢ t' ∈: T) ∧ (t -> t') ∧ ¬ (Γ ⊢ t ∈: T)
+  := by
+  exists empty, (Term.ite tru tru (λ"x" : TBool, tru)), tru, TBool
+  apply And.intro
+  . apply wt_tru
+  . apply And.intro
+    . apply Step.st_if_tru
+    . intro H
+      cases H
+      rename_i _ _ C
+      cases C
+  done
