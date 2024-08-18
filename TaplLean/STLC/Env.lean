@@ -10,6 +10,17 @@ def update {α : Type}
 notation:100 x " |→ " v " ; " τ => update x v τ
 notation:100 x " |→ " v => update x v empty
 
+theorem update_neq : ∀ {α : Type} {Γ : Env α} {x y v} (w),
+  Γ x = some v →
+  y ≠ x →
+  (y |→ w; Γ) x = some v
+  := by
+  intro α Γ x y v w H Hneq
+  unfold update
+  simp [Hneq]
+  assumption
+  done
+
 def sorted {α : Type} (Γ : Env α) (Γ' : Env α) : Prop :=
   ∀ x, Γ x = Γ' x
 
@@ -42,3 +53,33 @@ theorem sorted_extend_eq : ∀ {α : Type} (Γ : Env α) (x v w),
   := by
   intro α Γ x v w y; unfold update
   cases String.decEq x y <;> rename_i H <;> simp [H]
+
+def includeIn {α : Type} (Γ : Env α) (Γ' : Env α) : Prop :=
+  ∀ x v, (Γ x = some v → Γ' x = some v)
+
+theorem empty_min : ∀ {α : Type} (Γ : Env α),
+  includeIn empty Γ
+  := by
+  simp [includeIn]
+  intro α Γ x v H
+  cases H
+  done
+
+theorem update_includeIn : ∀ {α : Type} {Γ Γ' : Env α} (x v),
+  includeIn Γ Γ' →
+  includeIn (x |→ v; Γ) (x |→ v; Γ')
+  := by
+  intro α Γ Γ' x v H
+  unfold includeIn
+  unfold includeIn at H
+  intro y w Hy
+  unfold update at Hy
+  cases String.decEq x y
+  case isFalse Hneq =>
+    simp [Hneq] at Hy
+    have Hy' := H y w Hy
+    apply update_neq v Hy' Hneq
+  case isTrue Heq =>
+    simp [Heq] at Hy
+    unfold update; simp [Heq]; assumption
+  done
