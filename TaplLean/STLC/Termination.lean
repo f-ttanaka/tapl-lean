@@ -200,10 +200,9 @@ theorem substitution_preserve_type : ∀ {Γ x S t T s},
   := by
   intro Γ x S t T s
   revert Γ T
-  induction t <;> intro Γ T HT_t HT_s
+  induction t <;> intro Γ T HT_t HT_s <;> simp [subst]
   case var =>
     rename_i y
-    simp [subst]
     cases String.decEq x y
     case isFalse Hneq =>
       unfold update at HT_t; cases HT_t; rename_i HT_t
@@ -217,14 +216,45 @@ theorem substitution_preserve_type : ∀ {Γ x S t T s},
       have HT_s := weakening_empty Γ HT_s
       rw [← HT_t]
       assumption
+  case abs y T2 t IH =>
+    cases HT_t; rename_i T1 HT1
+    cases String.decEq x y
+    case isFalse Hneq =>
+      simp [Hneq]
+      rw [eq_swap Γ y x T2 S (Ne.symm Hneq)] at HT1
+      have HT_arr := IH HT1 HT_s
+      apply wt_abs HT_arr
+    case isTrue Heq =>
+      simp [Heq]
+      rw [Heq] at HT1
+      rw [← eq_extend_eq Γ y T2 S] at HT1
+      apply wt_abs HT1
+  case app t1 t2 IH1 IH2 =>
+    cases HT_t; rename_i T' HT_t2 HT_t1
+    have H1 := IH1 HT_t1 HT_s
+    have H2 := IH2 HT_t2 HT_s
+    apply wt_app H1 H2
+  done
 
 theorem step_preserve_type : ∀ {t t' : Term_} {T : Type_},
   (t -> t') → (empty ⊢ t ∈: T) → (empty ⊢ t' ∈: T)
   := by
   intro t t' T Hst HT_t
-  induction Hst
-  case st_app_abs x T2 t1 v2 H_v2 =>
-    apply wt_app
+  revert T
+  induction Hst <;> intro T HT_t
+  case st_app_abs x T2 t1 v2 _ =>
+    cases HT_t; rename_i T1 HT_v2 HT_t1
+    cases HT_t1; rename_i HT_t1
+    apply substitution_preserve_type HT_t1 HT_v2
+  case st_app1 t1 t1' t2 _ IH =>
+    cases HT_t; rename_i T2 HT_t2 HT_t1
+    have HT_t1' := IH HT_t1
+    apply wt_app HT_t1' HT_t2
+  case st_app2 v1 t2 t2' _HV_v1 _ IH =>
+    cases HT_t; rename_i T2 HT_t2 HT_v1
+    have HT_t2' := IH HT_t2
+    apply wt_app HT_v1 HT_t2'
+  done
 
 theorem step_preserve_R : ∀ {T t t'},
   (empty ⊢ t ∈: T) →

@@ -1,3 +1,5 @@
+import Mathlib.Logic.Basic
+
 abbrev Env (α : Type) := String → Option α
 
 def empty {α : Type} : (Env α) := fun _ => none
@@ -48,11 +50,39 @@ theorem sorted_swap : ∀ {α : Type} (Γ : Env α) (x y vx vy),
     . simp [Hxz]; simp [Hyz]
     . exfalso; rw [← Hyz] at Hxz; apply Hneq Hxz
 
+theorem eq_swap : ∀ {α : Type} (Γ : Env α) (x y vx vy),
+  x ≠ y →
+  (x |→ vx ; y |→ vy ; Γ) = (y |→ vy ; x |→ vx ; Γ)
+  := by
+  intro α Γ x y vx vy Hneq
+  funext z
+  unfold update
+  cases String.decEq x z
+  case isFalse Hneq_xz =>
+    simp [Hneq_xz]
+  case isTrue Heq_xz =>
+    have Hneq_yz := ne_of_ne_of_eq (Ne.symm Hneq) Heq_xz
+    simp [Heq_xz, Hneq_yz]
+  done
+
 theorem sorted_extend_eq : ∀ {α : Type} (Γ : Env α) (x v w),
   sorted (x |→ v ; Γ) (x |→ v ; x |→ w ; Γ)
   := by
   intro α Γ x v w y; unfold update
   cases String.decEq x y <;> rename_i H <;> simp [H]
+
+theorem eq_extend_eq : ∀ {α : Type} (Γ : Env α) (x v w),
+  (x |→ v ; Γ) = (x |→ v ; x |→ w ; Γ)
+  := by
+  intro α Γ x v w
+  funext y
+  unfold update
+  cases String.decEq x y
+  case isFalse Hneq =>
+    simp [Hneq]
+  case isTrue Heq =>
+    simp [Heq]
+  done
 
 def includeIn {α : Type} (Γ : Env α) (Γ' : Env α) : Prop :=
   ∀ x v, (Γ x = some v → Γ' x = some v)
