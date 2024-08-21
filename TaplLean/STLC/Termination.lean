@@ -74,7 +74,7 @@ inductive Step : Term_ → Term_ → Prop where
   | st_app_abs : ∀ {x T2 t1 v2},
       Value v2 →
       Step (app (λx:T2,t1) v2) ([x := v2] t1)
-  | st_app1 : ∀ {t1 t1' t2},
+  | st_app1 : ∀ {t1 t1'} (t2),
       Step t1 t1' →
       Step (app t1 t2) (app t1' t2)
   | st_app2 : ∀ {v1 t2 t2'},
@@ -107,6 +107,13 @@ def R (T : Type_) (t : Term_) : Prop :=
       (empty ⊢ t ∈: T1 :-> T2) ∧
       terminate t ∧
       (∀ s, R T1 s → R T2 (app t s))
+
+theorem R_imply_typable : ∀ {T t},
+  R T t → empty ⊢ t ∈: T
+  := by
+  intro T t HR
+  cases T <;> unfold R at HR <;> apply HR.left
+  done
 
 theorem R_term_is_terminate : ∀ {T t}, R T t → terminate t
   := by
@@ -261,7 +268,44 @@ theorem step_preserve_R : ∀ {T t t'},
   (t -> t') →
   (R T t ↔ R T t')
   := by
-  intro T t t' H_st HR
-  induction T <;> apply Iff.intro
-  case TBase =>
+  intro T
+  induction T <;> intro t t' HT_t Hst <;> apply Iff.intro
+  case TBase.mp =>
     simp [R]
+    intro _ Ht
+    apply And.intro
+    . apply step_preserve_type Hst HT_t
+    . apply Iff.mp (step_preserve_termination Hst) Ht
+  case TBase.mpr =>
+    simp [R]
+    intro HT_t' Ht_t'
+    apply And.intro
+    . assumption
+    . apply Iff.mpr (step_preserve_termination Hst) Ht_t'
+  case TArrow.mp T1 T2 IH1 IH2 =>
+    simp [R]
+    intro _ Ht_t HR
+    apply And.intro
+    . apply step_preserve_type Hst HT_t
+    . apply And.intro
+      . apply Iff.mp (step_preserve_termination Hst) Ht_t
+      . intro s HRs
+        have HT_s := R_imply_typable HRs
+        have HR_as := HR s HRs
+        have Hst_as := st_app1 s Hst
+        have HT_as := wt_app HT_t HT_s
+        apply Iff.mp (IH2 HT_as Hst_as) HR_as
+  case TArrow.mpr T1 T2 IH1 IH2 =>
+    simp [R]
+    intro HT_t' Ht_t' HR
+    apply And.intro
+    . assumption
+    . apply And.intro
+      . apply Iff.mpr (step_preserve_termination Hst) Ht_t'
+      . intro s HRs
+        have HT_s := R_imply_typable HRs
+        have HR_as := HR s HRs
+        have Hst_as := st_app1 s Hst
+        have HT_as := wt_app HT_t HT_s
+        apply Iff.mpr (IH2 HT_as Hst_as) HR_as
+  done
