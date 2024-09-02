@@ -1,4 +1,4 @@
-import TaplLean.STLC.Env
+import TaplLean.Env
 
 inductive Ty : Type where
   | TBool

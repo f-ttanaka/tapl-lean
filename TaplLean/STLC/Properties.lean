@@ -1,4 +1,4 @@
-import TaplLean.STLC.Env
+import TaplLean.Env
 import TaplLean.STLC.Internal
 
 open Term

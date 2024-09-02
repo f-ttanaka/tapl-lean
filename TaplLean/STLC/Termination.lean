@@ -1,5 +1,5 @@
 import Mathlib.Logic.Relation
-import TaplLean.STLC.Env
+import TaplLean.Env
 
 inductive Type_ where
   | TBase : Type_
